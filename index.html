@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GCC Web – Geocache Calculator (Lightweight)</title>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#38bdf8;--good:#22c55e;--bad:#ef4444;--card:#1f2937;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:linear-gradient(180deg,#0b1222,#0f172a 30%);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);background:rgba(15,23,42,.6);border-bottom:1px solid #1f2937}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1{font-size:22px;margin:0}
+    h2{margin:16px 0 8px;font-size:18px}
+    p{color:var(--muted)}
+    ul{color:var(--muted)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .tab{padding:10px 14px;border:1px solid #1f2937;border-radius:999px;background:#0b1222;color:#cbd5e1;cursor:pointer}
+    .tab.active{background:var(--accent);color:#04131e;border-color:transparent;font-weight:600}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid #263142;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    label{display:block;font-size:12px;color:#a3b3c4;margin-bottom:6px}
+    textarea,input,select{width:100%;background:#0b1222;color:#e5e7eb;border:1px solid #243041;border-radius:10px;padding:10px}
+    textarea{min-height:110px}
+    .row{display:flex;gap:10px;align-items:center}
+    .row>*{flex:1}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid #223041;background:#0c1828;color:#dbeafe;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#021018;border-color:transparent}
+    .btn.ghost{background:transparent}
+    .hint{font-size:12px;color:#9aa7b8;margin-top:6px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}
+    .pill{background:#0a1422;border:1px solid #263142;border-radius:999px;padding:6px 10px;font-size:12px;display:inline-block}
+    .footer{color:#6b7280;font-size:12px;margin-top:18px}
+    .ok{color:var(--good)}.bad{color:var(--bad)}
+    .hidden{display:none}
+    .copy{cursor:pointer;user-select:none}
+    .small{font-size:12px;color:#93a3b5}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>GCC Web – Geocache Calculator (Lightweight) <span class="pill">Client‑side · Offline‑ready</span></h1>
+      <p class="small">Modular Web‑App mit Kernfunktionen: Coden & Entschlüsseln, Hashes, Koordinaten, Konvertierungen. Keine Serverabhängigkeit – ideal für GitHub Pages.</p>
+      <div class="tabs" id="tabs"></div>
+    </div>
+  </header>
+
+  <main class="wrap" id="app"></main>
+
+  <script>
+  // Utilities
+  const qs=(s,p=document)=>p.querySelector(s); const qsa=(s,p=document)=>[...p.querySelectorAll(s)];
+  const enc = new TextEncoder(); const dec = new TextDecoder();
+  const copy = (el, txt) => { navigator.clipboard.writeText(txt).then(()=>{ el.textContent='Kopiert!'; setTimeout(()=>el.textContent='Kopieren',1200) }) };
+
+  // --- Cipher helpers ---
+  const ALC='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const norm = s=>s.normalize('NFKD');
+  function atbash(text){
+    const m = new Map(ALC.split('').map((c,i)=>[c,ALC[25-i]]));
+    return norm(text).split('').map(ch=>{
+      const up = ch.toUpperCase();
+      if(m.has(up)){
+        const r=m.get(up);
+        return ch===up?r:r.toLowerCase();
+      }
+      return ch;
+    }).join('');
+  }
+  function caesar(text, shift=3){
+    shift=((shift%26)+26)%26;
+    return norm(text).split('').map(ch=>{
+      const up=ch.toUpperCase();
+      const i=ALC.indexOf(up);
+      if(i>-1){
+        const r=ALC[(i+shift)%26];
+        return ch===up?r:r.toLowerCase();
+      }
+      return ch;
+    }).join('');
+  }
+  function vigenere(text, key){
+    const ks=[...key.toUpperCase()].filter(c=>ALC.includes(c));
+    if(!ks.length) return text;
+    let ki=0;
+    return norm(text).split('').map(ch=>{
+      const up=ch.toUpperCase();
+      const i=ALC.indexOf(up);
+      if(i>-1){
+        const sh=ALC.indexOf(ks[ki%ks.length]);
+        ki++; const r=ALC[(i+sh)%26];
+        return ch===up?r:r.toLowerCase();
+      }
+      return ch;
+    }).join('');
+  }
+  function vigenereDecode(text,key){
+    const ks=[...key.toUpperCase()].filter(c=>ALC.includes(c));
+    if(!ks.length) return text;
+    let ki=0;
+    return norm(text).split('').map(ch=>{
+      const up=ch.toUpperCase();
+      const i=ALC.indexOf(up);
+      if(i>-1){
+        const sh=ALC.indexOf(ks[ki%ks.length]);
+        ki++; const r=ALC[(i-sh+26)%26];
+        return ch===up?r:r.toLowerCase();
+      }
+      return ch;
+    }).join('');
+  }
+  const MORSE_MAP = {
+    'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',' ':'/'
+  };
+  const MORSE_REV = Object.fromEntries(Object.entries(MORSE_MAP).map(([k,v])=>[v,k]));
+  function toMorse(t){return [...norm(t).toUpperCase()].map(ch=>MORSE_MAP[ch]||ch).join(' ')}
+  function fromMorse(t){return t.trim().split(/\s+/).map(code=>MORSE_REV[code]||'?').join('')}
+
+  // --- Hashes ---
+  async function sha256(text){
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  // compact MD5 (RFC 1321) – small JS implementation
+  function md5(str){
+    function R(n,c){return(n<<c)|(n>>> (32-c))}
+    function C(q,a,b,x,s,t){return (a=(((a+q)|0)+((x|0)+t)|0),(((a<<s)|(a>>> (32-s)))+b)|0)}
+    function F(a,b,c,d,x,s,t){return C((b&c)|((~b)&d),a,b,x,s,t)}
+    function G(a,b,c,d,x,s,t){return C((b&d)|(c&(~d)),a,b,x,s,t)}
+    function H(a,b,c,d,x,s,t){return C(b^c^d,a,b,x,s,t)}
+    function I(a,b,c,d,x,s,t){return C(c^(b|(~d)),a,b,x,s,t)}
+    function toBlocks(s){
+      const n=s.length; const bytes=[]; for(let i=0;i<n;i++)bytes.push(s.charCodeAt(i));
+      bytes.push(0x80); while((bytes.length%64)!==56)bytes.push(0);
+      const bitLen=n*8; for(let i=0;i<8;i++)bytes.push((bitLen>>> (8*i))&255);
+      const blocks=[]; for(let i=0;i<bytes.length;i+=64){const w=[]; for(let j=0;j<64;j+=4){w.push(bytes[i+j]|(bytes[i+j+1]<<8)|(bytes[i+j+2]<<16)|(bytes[i+j+3]<<24))}blocks.push(w)}
+      return blocks;
+    }
+    const x=toBlocks(unescape(encodeURIComponent(str)));
+    let a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+    for(const k of x){
+      const [AA,BB,CC,DD]=[a,b,c,d];
+      a=F(a,b,c,d,k[0],7,-680876936); d=F(d,a,b,c,k[1],12,-389564586); c=F(c,d,a,b,k[2],17,606105819); b=F(b,c,d,a,k[3],22,-1044525330);
+      a=F(a,b,c,d,k[4],7,-176418897); d=F(d,a,b,c,k[5],12,1200080426); c=F(c,d,a,b,k[6],17,-1473231341); b=F(b,c,d,a,k[7],22,-45705983);
+      a=F(a,b,c,d,k[8],7,1770035416); d=F(d,a,b,c,k[9],12,-1958414417); c=F(c,d,a,b,k[10],17,-42063); b=F(b,c,d,a,k[11],22,-1990404162);
+      a=F(a,b,c,d,k[12],7,1804603682); d=F(d,a,b,c,k[13],12,-40341101); c=F(c,d,a,b,k[14],17,-1502002290); b=F(b,c,d,a,k[15],22,1236535329);
+      a=G(a,b,c,d,k[1],5,-165796510); d=G(d,a,b,c,k[6],9,-1069501632); c=G(c,d,a,b,k[11],14,643717713); b=G(b,c,d,a,k[0],20,-373897302);
+      a=G(a,b,c,d,k[5],5,-701558691); d=G(d,a,b,c,k[10],9,38016083); c=G(c,d,a,b,k[15],14,-660478335); b=G(b,c,d,a,k[4],20,-405537848);
+      a=G(a,b,c,d,k[9],5,568446438); d=G(d,a,b,c,k[14],9,-1019803690); c=G(c,d,a,b,k[3],14,-187363961); b=G(b,c,d,a,k[8],20,1163531501);
+      a=G(a,b,c,d,k[13],5,-1444681467); d=G(d,a,b,c,k[2],9,-51403784); c=G(c,d,a,b,k[7],14,1735328473); b=G(b,c,d,a,k[12],20,-1926607734);
+      a=H(a,b,c,d,k[5],4,-378558); d=H(d,a,b,c,k[8],11,-2022574463); c=H(c,d,a,b,k[11],16,1839030562); b=H(b,c,d,a,k[14],23,-35309556);
+      a=H(a,b,c,d,k[1],4,-1530992060); d=H(d,a,b,c,k[4],11,1272893353); c=H(c,d,a,b,k[7],16,-155497632); b=H(b,c,d,a,k[10],23,-1094730640);
+      a=H(a,b,c,d,k[13],4,681279174); d=H(d,a,b,c,k[0],11,-358537222); c=H(c,d,a,b,k[3],16,-722521979); b=H(b,c,d,a,k[6],23,76029189);
+      a=H(a,b,c,d,k[9],4,-640364487); d=H(d,a,b,c,k[12],11,-421815835); c=H(c,d,a,b,k[15],16,530742520); b=H(b,c,d,a,k[2],23,-995338651);
+      a=I(a,b,c,d,k[0],6,-198630844); d=I(d,a,b,c,k[7],10,1126891415); c=I(c,d,a,b,k[14],15,-1416354905); b=I(b,c,d,a,k[5],21,-57434055);
+      a=I(a,b,c,d,k[12],6,1700485571); d=I(d,a,b,c,k[3],10,-1894986606); c=I(c,d,a,b,k[10],15,-1051523); b=I(b,c,d,a,k[1],21,-2054922799);
+      a=I(a,b,c,d,k[8],6,1873313359); d=I(d,a,b,c,k[15],10,-30611744); c=I(c,d,a,b,k[6],15,-1560198380); b=I(b,c,d,a,k[13],21,1309151649);
+      a=(a+AA)|0; b=(b+BB)|0; c=(c+CC)|0; d=(d+DD)|0;
+    }
+    function hex(x){return (x>>>0).toString(16).padStart(8,'0')}
+    return hex(a)+hex(b)+hex(c)+hex(d);
+  }
+
+  // --- Coordinates ---
+  const R = 6371e3; // meters
+  const toRad = d=>d*Math.PI/180; const toDeg = r=>r*180/Math.PI;
+  function haversine(lat1,lon1,lat2,lon2){
+    const φ1=toRad(lat1), φ2=toRad(lat2), Δφ=toRad(lat2-lat1), Δλ=toRad(lon2-lon1);
+    const a=Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+    const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    return R*c; // meters
+  }
+  function initialBearing(lat1,lon1,lat2,lon2){
+    const φ1=toRad(lat1), φ2=toRad(lat2), Δλ=toRad(lon2-lon1);
+    const y=Math.sin(Δλ)*Math.cos(φ2);
+    const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    return (toDeg(Math.atan2(y,x))+360)%360;
+  }
+  function project(lat,lon,bearingDeg,distanceMeters){
+    const δ=distanceMeters/R; const θ=toRad(bearingDeg);
+    const φ1=toRad(lat), λ1=toRad(lon);
+    const φ2=Math.asin(Math.sin(φ1)*Math.cos(δ)+Math.cos(φ1)*Math.sin(δ)*Math.cos(θ));
+    const λ2=λ1+Math.atan2(Math.sin(θ)*Math.sin(δ)*Math.cos(φ1), Math.cos(δ)-Math.sin(φ1)*Math.sin(φ2));
+    return {lat: toDeg(φ2), lon: ((toDeg(λ2)+540)%360)-180};
+  }
+  function midpoint(lat1,lon1,lat2,lon2){
+    const φ1=toRad(lat1), λ1=toRad(lon1), φ2=toRad(lat2), λ2=toRad(lon2);
+    const Bx=Math.cos(φ2)*Math.cos(λ2-λ1);
+    const By=Math.cos(φ2)*Math.sin(λ2-λ1);
+    const φ3=Math.atan2(Math.sin(φ1)+Math.sin(φ2), Math.sqrt((Math.cos(φ1)+Bx)**2 + By**2));
+    const λ3=λ1+Math.atan2(By, Math.cos(φ1)+Bx);
+    return {lat: toDeg(φ3), lon: ((toDeg(λ3)+540)%360)-180};
+  }
+
+  // --- Conversions / Sums ---
+  function crossSum(n){return String(n).replace(/\D/g,'').split('').reduce((a,b)=>a+Number(b),0)}
+  function a1z26Sum(t){
+    let s=0; for(const ch of norm(t).toUpperCase()){
+      const i=ALC.indexOf(ch); if(i>=0) s+=i+1;
+    } return s;
+  }
+  function hexToRgb(hex){
+    const m=hex.trim().replace(/^#/,''); if(!/^([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(m)) return null;
+    const h=m.length===3?m.split('').map(c=>c+c).join(''):m;
+    const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    return {r,g,b};
+  }
+  function rgbToHex(r,g,b){
+    const clamp=v=>Math.max(0,Math.min(255,Math.round(v)));
+    return '#'+[clamp(r),clamp(g),clamp(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  function rgbToHsl(r,g,b){
+    r/=255; g/=255; b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,l=(max+min)/2;
+    if(max===min){h=s=0}else{const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+      switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;} h/=6; }
+    return {h:Math.round(h*360), s:Math.round(s*100), l:Math.round(l*100)}
+  }
+  function hslToRgb(h,s,l){
+    h/=360; s/=100; l/=100; if(s===0){const v=Math.round(l*255); return {r:v,g:v,b:v};}
+    const hue2rgb=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p;};
+    const q=l<.5?l*(1+s):l+s-l*s; const p=2*l-q;
+    const r=hue2rgb(p,q,h+1/3), g=hue2rgb(p,q,h), b=hue2rgb(p,q,h-1/3);
+    return {r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255)}
+  }
+
+  // --- UI ---
+  const PAGES = [
+    { key:'ciphers', label:'Coden & Entschlüsseln', render: renderCiphers },
+    { key:'hash', label:'Hashes', render: renderHashes },
+    { key:'coords', label:'Koordinaten', render: renderCoords },
+    { key:'convert', label:'Konvertierungen', render: renderConvert },
+    { key:'about', label:'Über / Offline', render: renderAbout }
+  ];
+
+  function initTabs(){
+    const t=qs('#tabs'); t.innerHTML='';
+    for(const p of PAGES){
+      const b=document.createElement('button'); b.className='tab'; b.textContent=p.label; b.dataset.key=p.key;
+      b.onclick=()=>show(p.key); t.appendChild(b);
+    }
+    show('ciphers');
+  }
+  function show(key){
+    qsa('.tab',qs('#tabs')).forEach(b=>b.classList.toggle('active', b.dataset.key===key));
+    const page=PAGES.find(p=>p.key===key); const m=qs('#app'); m.innerHTML='';
+    const el = page.render(); m.appendChild(el);
+  }
+
+  // === Pages ===
+  function renderCiphers(){
+    const root = div();
+    root.append(
+      card(h2('Coden & Entschlüsseln'),
+        row(
+          field('Text', textarea({id:'cipher-in', placeholder:'Klartext oder Geheimtext…'})),
+          field('Ergebnis', textarea({id:'cipher-out', readonly:true}))
+        ),
+        row(
+          field('Verfahren', select({id:'cipher-kind'}, [
+            ['atbash','Atbash'],
+            ['caesar','Caesar (+Shift)'],
+            ['vigenere','Vigenère (Encode)'],
+            ['vigenere-dec','Vigenère (Decode)'],
+            ['morse-enc','Morse (Encode)'],
+            ['morse-dec','Morse (Decode)'],
+          ])),
+          field('Schlüssel / Shift', input({id:'cipher-key', placeholder:'z.B. 13 oder LEMON'}))
+        ),
+        row(
+          btn('Ausführen', ()=>{
+            const kind=qs('#cipher-kind').value; const inp=qs('#cipher-in').value; const key=qs('#cipher-key').value;
+            let out=inp;
+            try{
+              if(kind==='atbash') out=atbash(inp);
+              if(kind==='caesar') out=caesar(inp, Number(key||0));
+              if(kind==='vigenere') out=vigenere(inp, key||'');
+              if(kind==='vigenere-dec') out=vigenereDecode(inp, key||'');
+              if(kind==='morse-enc') out=toMorse(inp);
+              if(kind==='morse-dec') out=fromMorse(inp);
+            }catch(e){ out='Fehler: '+e.message }
+            qs('#cipher-out').value=out;
+          }, 'primary'),
+          btn('Kopieren', (ev)=>copy(ev.target, qs('#cipher-out').value), ''),
+          btn('Löschen', ()=>{ qs('#cipher-in').value=''; qs('#cipher-out').value=''; qs('#cipher-key').value='' }, 'ghost')
+        ),
+        psmall('Unterstützt: Atbash, Caesar, Vigenère, Morse. Mehr Verfahren lassen sich modular ergänzen.')
+      )
+    );
+    return root;
+  }
+
+  function renderHashes(){
+    const root=div();
+    root.append(
+      card(h2('Hashes'),
+        field('Eingabe', textarea({id:'hash-in', placeholder:'Text…'})),
+        row(
+          field('MD5', input({id:'hash-md5', readonly:true, className:'mono'})),
+          field('SHA-256', input({id:'hash-sha', readonly:true, className:'mono'}))
+        ),
+        row(
+          btn('Berechnen', async()=>{
+            const t=qs('#hash-in').value;
+            qs('#hash-md5').value=md5(t);
+            qs('#hash-sha').value=await sha256(t);
+          }, 'primary'),
+          btn('MD5 kopieren', (ev)=>copy(ev.target, qs('#hash-md5').value)),
+          btn('SHA kopieren', (ev)=>copy(ev.target, qs('#hash-sha').value), 'ghost')
+        ),
+        psmall('Hinweis: Alle Berechnungen erfolgen lokal im Browser.')
+      )
+    );
+    return root;
+  }
+
+  function renderCoords(){
+    const root=div();
+    // Distance/Bearing/Midpoint
+    root.append(
+      card(h2('Distanz, Peilung, Mittelpunkt'),
+        row(
+          field('Lat1', input({id:'lat1', placeholder:'z.B. 48.400'})),
+          field('Lon1', input({id:'lon1', placeholder:'z.B. 10.000'})),
+          field('Lat2', input({id:'lat2', placeholder:'z.B. 48.500'})),
+          field('Lon2', input({id:'lon2', placeholder:'z.B. 9.990'}))
+        ),
+        row(
+          field('Distanz (m)', input({id:'dist', readonly:true})),
+          field('Peilung (°)', input({id:'bear', readonly:true})),
+          field('Mittelpunkt Lat', input({id:'midlat', readonly:true})),
+          field('Mittelpunkt Lon', input({id:'midlon', readonly:true}))
+        ),
+        row(
+          btn('Berechnen', ()=>{
+            const lat1=Number(qs('#lat1').value), lon1=Number(qs('#lon1').value), lat2=Number(qs('#lat2').value), lon2=Number(qs('#lon2').value);
+            if([lat1,lon1,lat2,lon2].some(v=>Number.isNaN(v))) return alert('Bitte gültige Zahlen eingeben.');
+            qs('#dist').value=Math.round(haversine(lat1,lon1,lat2,lon2));
+            qs('#bear').value=initialBearing(lat1,lon1,lat2,lon2).toFixed(2);
+            const m=midpoint(lat1,lon1,lat2,lon2); qs('#midlat').value=m.lat.toFixed(6); qs('#midlon').value=m.lon.toFixed(6);
+          }, 'primary'),
+          btn('Ergebnis kopieren', (ev)=>{
+            const txt=`Distanz=${qs('#dist').value}m, Bearing=${qs('#bear').value}°, Mid=(${qs('#midlat').value},${qs('#midlon').value})`;
+            copy(ev.target, txt);
+          })
+        )
+      )
+    );
+
+    // Projection
+    root.append(
+      card(h2('Projektion (Peilung + Distanz)'),
+        row(
+          field('Start Lat', input({id:'plat', placeholder:'48.400000'})),
+          field('Start Lon', input({id:'plon', placeholder:'10.000000'})),
+          field('Peilung (°)', input({id:'pbrg', placeholder:'0…360'})),
+          field('Distanz (m)', input({id:'pdis', placeholder:'z.B. 250'}))
+        ),
+        row(
+          field('Ziel Lat', input({id:'ptlat', readonly:true})),
+          field('Ziel Lon', input({id:'ptlon', readonly:true}))
+        ),
+        row(
+          btn('Projizieren', ()=>{
+            const lat=Number(qs('#plat').value), lon=Number(qs('#plon').value), br=Number(qs('#pbrg').value), d=Number(qs('#pdis').value);
+            if([lat,lon,br,d].some(v=>Number.isNaN(v))) return alert('Bitte gültige Zahlen eingeben.');
+            const r=project(lat,lon,br,d); qs('#ptlat').value=r.lat.toFixed(6); qs('#ptlon').value=r.lon.toFixed(6);
+          }, 'primary'),
+          btn('Kopieren', (ev)=>copy(ev.target, `${qs('#ptlat').value}, ${qs('#ptlon').value}`))
+        )
+      )
+    );
+
+    return root;
+  }
+
+  function renderConvert(){
+    const root=div();
+    // Colors
+    root.append(
+      card(h2('Farben: HEX ⇄ RGB ⇄ HSL'),
+        row(
+          field('HEX', input({id:'hex', placeholder:'#12abef'})),
+          field('RGB', input({id:'rgb', placeholder:'18,171,239'})),
+          field('HSL', input({id:'hsl', placeholder:'203,87,50'}))
+        ),
+        row(
+          btn('HEX → RGB/HSL', ()=>{
+            const v=qs('#hex').value; const c=hexToRgb(v); if(!c) return alert('Ungültiges HEX');
+            qs('#rgb').value=`${c.r},${c.g},${c.b}`; const h=rgbToHsl(c.r,c.g,c.b); qs('#hsl').value=`${h.h},${h.s},${h.l}`;
+          }, 'primary'),
+          btn('RGB → HEX/HSL', ()=>{
+            const [r,g,b]=qs('#rgb').value.split(/\s*,\s*/).map(Number); if([r,g,b].some(v=>Number.isNaN(v))) return alert('Ungültiges RGB');
+            const hex=rgbToHex(r,g,b); qs('#hex').value=hex; const h=rgbToHsl(r,g,b); qs('#hsl').value=`${h.h},${h.s},${h.l}`;
+          }),
+          btn('HSL → RGB/HEX', ()=>{
+            const [h,s,l]=qs('#hsl').value.split(/\s*,\s*/).map(Number); if([h,s,l].some(v=>Number.isNaN(v))) return alert('Ungültiges HSL');
+            const rgb=hslToRgb(h,s,l); qs('#rgb').value=`${rgb.r},${rgb.g},${rgb.b}`; qs('#hex').value=rgbToHex(rgb.r,rgb.g,rgb.b);
+          }, 'ghost')
+        )
+      )
+    );
+
+    // Sums
+    root.append(
+      card(h2('Summen & Codes'),
+        row(
+          field('Eingabe', input({id:'sum-in', placeholder:'Text oder Zahl'})),
+          field('Quersumme', input({id:'sum-cross', readonly:true})),
+          field('A1Z26 Summe', input({id:'sum-a1', readonly:true}))
+        ),
+        row(
+          btn('Berechnen', ()=>{
+            const t=qs('#sum-in').value; qs('#sum-cross').value=crossSum(t); qs('#sum-a1').value=a1z26Sum(t);
+          }, 'primary'),
+          btn('Alles löschen', ()=>{ ['sum-in','sum-cross','sum-a1','hex','rgb','hsl'].forEach(id=>{const e=qs('#'+id); if(e) e.value=''}); }, 'ghost')
+        )
+      )
+    );
+
+    return root;
+  }
+
+  function renderAbout(){
+    const root=div();
+    root.append(
+      card(h2('Über diese Web‑App'),
+        pelt('Diese schlanke Neu‑Interpretation des Geocache Calculators läuft vollständig client‑seitig. Du kannst die Datei als "index.html" auf GitHub Pages hosten (Repo → Settings → Pages).'),
+        ul(
+          li('Keine Server‑Abhängigkeit, funktioniert auch offline nach dem ersten Laden (Browser‑Cache).'),
+          li('Datenschutz: Eingaben verlassen deinen Browser nicht.'),
+          li('Modular: Weitere Verfahren (z.\u00A0B. ADFGX, Playfair, Bacon) können in der JS‑Sektion ergänzt werden.')
+        ),
+        psmall('Hinweis: Diese Version deckt Kern‑Funktionen ab. Für volle GCC‑Feature‑Parity (250+ Tools) können wir schrittweise Module ergänzen.')
+      )
+    );
+    return root;
+  }
+
+  // --- Tiny DOM helpers ---
+  function el(tag, props={}, ...children){ const e=document.createElement(tag); Object.assign(e, props); children.flat().forEach(c=>e.append(c?.nodeType?c:document.createTextNode(c))); return e; }
+  const div=(...c)=>el('div',{},...c); const h2=t=>el('h2',{},t); const pelt=t=>el('p',{},t); const ul=(...c)=>el('ul',{},...c); const li=t=>el('li',{},t);
+  const card=(...c)=>el('section',{className:'card'},...c); const row=(...c)=>el('div',{className:'row'},...c); const psmall=t=>el('p',{className:'hint'},t);
+  function field(labelText, control){ const w=div(); w.append(el('label',{},labelText), control); return w; }
+  function textarea(props={}){ return el('textarea', props); }
+  function input(props={}){ return el('input', props); }
+  function select(props={}, options){ const s=el('select', props); for(const [v,l] of options) s.append(el('option',{value:v},l)); return s; }
+  function btn(text, onClick, variant=''){ const b=el('button',{className:'btn '+variant, onclick:onClick}, text); return b; }
+
+  // Start
+  initTabs();
+  </script>
+</body>
+</html>
