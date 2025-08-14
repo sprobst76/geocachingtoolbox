@@ -6,19 +6,100 @@
   <meta name="theme-color" content="#0f172a" />
   <title>GCC Web – Geocache Calculator</title>
   <link rel="manifest" href="./pwa/manifest.webmanifest">
-  <link rel="stylesheet" href="./src/core/style.css">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      text-align: center;
+      color: #04131e;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 1rem;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    .card h2 {
+      font-size: 1.2rem;
+      margin: 0 0 0.5rem;
+    }
+    .card p {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      flex: 1;
+    }
+    .card .tag {
+      background: var(--accent);
+      color: #04131e;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      align-self: flex-start;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <div class="wrap">
-      <h1>GCC Web – Geocache Calculator <span class="pill">PWA</span></h1>
-      <p class="small">Modularer Client – funktioniert offline.</p>
-      <div class="tabs" id="tabs"></div>
-    </div>
+    <h1>GCC Web – Geocache Calculator (PWA)</h1>
   </header>
-  <main class="wrap" id="app"></main>
-
-  <script type="module" src="./src/core/app.js"></script>
+  <main id="modules">
+    <!-- Dynamische Kacheln -->
+  </main>
+  <script>
+    const modules = [
+      { title: 'Atbash Cipher', desc: 'Text mit Atbash-Chiffre umwandeln', tag: 'Cipher', link: '#atbash' },
+      { title: 'Caesar Cipher', desc: 'Text mit Caesar-Chiffre verschieben', tag: 'Cipher', link: '#caesar' },
+      { title: 'Vigenère Cipher', desc: 'Text mit Schlüsselwort verschlüsseln', tag: 'Cipher', link: '#vigenere' },
+      { title: 'Koordinaten-Umrechner', desc: 'UTM, WGS84, MGRS konvertieren', tag: 'Geo', link: '#coords' },
+    ];
+    const container = document.getElementById('modules');
+    modules.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<span class="tag">${m.tag}</span><h2>${m.title}</h2><p>${m.desc}</p>`;
+      card.onclick = () => location.href = m.link;
+      container.appendChild(card);
+    });
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./pwa/sw.js').catch(console.warn);
