@@ -1,12 +1,21 @@
 {
-  "name": "GCC Web – Geocache Calculator",
-  "short_name": "GCC Web",
+  "name": "GCC Web \u2013 Geocache Toolbox",
+  "short_name": "GCC Toolbox",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
   "icons": [
-    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

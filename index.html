@@ -3,120 +3,171 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>GCC Web – Geocache Calculator</title>
+  <meta name="theme-color" content="#0a0f1a" />
+  <title>GCC Web – Geocache Toolbox</title>
   <link rel="manifest" href="./pwa/manifest.webmanifest">
   <style>
-    :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --text: #e6edf3;
-      --accent: #3fb950;
-      --accent-hover: #2ea043;
-    }
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      padding: 1rem;
-      background: var(--card-bg);
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    #search {
-      margin-top: 0.5rem;
-      padding: 0.4rem 0.6rem;
-      border-radius: 0.4rem;
-      border: none;
-      width: 90%;
-      max-width: 400px;
-    }
-    main {
-      flex: 1;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: 0.8rem;
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 200px;
-      justify-content: space-between;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    }
-    .card svg {
-      width: 40px;
-      height: 40px;
-      fill: var(--accent);
-    }
-    .card h2 {
-      margin: 0.5rem 0 0;
-      font-size: 1.1rem;
-    }
-    .card p {
-      font-size: 0.85rem;
-      color: #8b949e;
-    }
+    :root{--bg:#0a0f1a;--bg2:#0c1424;--card:#111b2e;--text:#e6edf3;--muted:#9fb0c8;--accent:#7dd3fc;--accent2:#22d3ee;--ring:rgba(125,211,252,.45)}
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Noto Sans,sans-serif;background:linear-gradient(180deg,var(--bg),var(--bg2) 50%,var(--bg));color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    header{position:sticky;top:0;z-index:10;background:rgba(12,20,36,.6);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.07)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}.brand{display:flex;align-items:center;gap:12px}
+    .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    h1{margin:0;font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:4px}
+    .toolbar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .search{flex:1;min-width:220px;background:#0b1628;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;color:var(--text)}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.08);background:#0b1628;padding:8px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
+    main{flex:1}.grid{max-width:1100px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+    .card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);transition:.2s transform,.2s box-shadow,.2s border-color;height:200px;display:flex;flex-direction:column;cursor:pointer}
+    .card:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.4);border-color:var(--ring)}
+    .tag{position:absolute;top:10px;right:10px;font-size:11px;padding:4px 8px;border-radius:999px;background:rgba(125,211,252,.12);border:1px solid var(--ring);color:#c7e9ff}
+    .icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#0b1628;border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+    .card h3{margin:2px 0 6px;font-size:16px}.card p{margin:0;color:var(--muted);font-size:12px}
+    .panel{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,10,20,.55);backdrop-filter:blur(6px)}
+    .panel.open{display:flex}.sheet{width:min(880px,92vw);max-height:88vh;overflow:auto;background:#0f182b;border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 20px 70px rgba(0,0,0,.5)}
+    .sheet header{position:sticky;top:0;background:rgba(14,22,38,.8);backdrop-filter:blur(8px);padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
+    .sheet .content{padding:16px}.row{display:flex;gap:10px;flex-wrap:wrap}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    textarea,input{width:100%;background:#0b1628;border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:10px}
+    textarea{min-height:110px}.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(125,211,252,.25),rgba(125,211,252,.18));color:#062333;cursor:pointer}
+    .chip{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:#0b1628;border:1px solid rgba(255,255,255,.08);font-size:11px;color:#cfe7ff}
+    .sep{height:1px;background:rgba(255,255,255,.06);margin:14px 0}
   </style>
 </head>
 <body>
   <header>
-    <h1>GCC Web – Geocache Calculator</h1>
-    <input type="text" id="search" placeholder="🔍 Modul suchen...">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>GCC Web – Geocache Toolbox</h1>
+          <div class="sub">Schnelle Tools · Offline · Kachel-UI</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input id="q" class="search" placeholder="🔎 Module suchen …" />
+        <span class="pill">PWA</span><span class="pill">Client‑Side</span>
+      </div>
+    </div>
   </header>
-  <main id="modules"></main>
+
+  <main><div id="grid" class="grid"></div></main>
+
+  <div id="panel" class="panel" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <header>
+        <div class="row" style="align-items:center">
+          <div id="modIcon" class="icon"></div>
+          <h3 id="modTitle" style="margin-left:8px">Modul</h3>
+        </div>
+        <button class="btn" id="close">Schließen ✕</button>
+      </header>
+      <div id="modBody" class="content"></div>
+    </div>
+  </div>
 
   <script>
+    const ICONS = {
+      cipher:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+      geo:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s7-7 7-11a7 7 0 10-14 0c0 4 7 11 7 11z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="10" r="2" fill="currentColor"/></svg>',
+      hash:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3L7 21M17 3l-2 18M4 8h16M3 16h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+    };
+
+    // --- Algorithms ---
+    const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const atbash = t => {
+      const m = new Map(A.split('').map((c,i)=>[c, A[25-i]]));
+      return [...t].map(ch=>{const up=ch.toUpperCase(); if(!m.has(up)) return ch; const r=m.get(up); return ch===up?r:r.toLowerCase()}).join('');
+    };
+    const caesar = (t,s=13) => {
+      s=((s%26)+26)%26; return [...t].map(ch=>{const up=ch.toUpperCase(); const i=A.indexOf(up); if(i<0) return ch; const r=A[(i+s)%26]; return ch===up?r:r.toLowerCase()}).join('');
+    };
+    const vigEnc = (t,k)=>{ const ks=[...k.toUpperCase()].filter(c=>A.includes(c)); if(!ks.length) return t; let i=0; return [...t].map(ch=>{const up=ch.toUpperCase(); const p=A.indexOf(up); if(p<0) return ch; const s=A.indexOf(ks[i++%ks.length]); const r=A[(p+s)%26]; return ch===up?r:r.toLowerCase()}).join(''); };
+    const vigDec = (t,k)=>{ const ks=[...k.toUpperCase()].filter(c=>A.includes(c)); if(!ks.length) return t; let i=0; return [...t].map(ch=>{const up=ch.toUpperCase(); const p=A.indexOf(up); if(p<0) return ch; const s=A.indexOf(ks[i++%ks.length]); const r=A[(p-s+26)%26]; return ch===up?r:r.toLowerCase()}).join(''); };
+
+    // --- Modules ---
     const modules = [
-      { title: 'Atbash Cipher', desc: 'Text mit Atbash-Chiffre umwandeln', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3h20v2H2zm0 14h20v2H2zm0-7h20v2H2z"/></svg>', link: '#atbash' },
-      { title: 'Caesar Cipher', desc: 'Text mit Caesar-Chiffre verschieben', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>', link: '#caesar' },
-      { title: 'Vigenère Cipher', desc: 'Text mit Schlüsselwort verschlüsseln', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>', link: '#vigenere' },
-      { title: 'Koordinaten-Umrechner', desc: 'UTM, WGS84, MGRS konvertieren', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>', link: '#coords' },
+      { id:'atbash',   icon:'cipher', tag:'Cipher', title:'Atbash', desc:'Spiegel-Chiffre A↔Z, B↔Y …', render(){
+          const c=document.createElement('div');
+          c.innerHTML='<div class="row"><div style="flex:1"><label>Text</label><textarea id="in"></textarea></div><div style="flex:1"><label>Ergebnis</label><textarea id="out" readonly></textarea></div></div>';
+          const b=document.createElement('button'); b.className='btn'; b.textContent='Umwandeln';
+          b.onclick=()=>{document.querySelector('#out',c)?.value; c.querySelector('#out').value = atbash(c.querySelector('#in').value);};
+          c.appendChild(document.createElement('div')).append(b); return c;
+      }},
+      { id:'caesar',   icon:'cipher', tag:'Cipher', title:'Caesar', desc:'Buchstaben um n Positionen', render(){
+          const c=document.createElement('div');
+          c.innerHTML='<div class="row"><div style="flex:2"><label>Text</label><textarea id="in"></textarea></div><div style="flex:1"><label>Shift</label><input id="sh" type="number" value="13"></div></div><div><label>Ergebnis</label><textarea id="out" readonly></textarea></div>';
+          const b=document.createElement('button'); b.className='btn'; b.textContent='Verschieben';
+          b.onclick=()=>{ const s=((Number(c.querySelector('#sh').value)||0)%26+26)%26; c.querySelector('#out').value = caesar(c.querySelector('#in').value, s); };
+          c.appendChild(document.createElement('div')).append(b); return c;
+      }},
+      { id:'vigenere', icon:'cipher', tag:'Cipher', title:'Vigenère', desc:'Schlüsselwort (enc/dec)', render(){
+          const c=document.createElement('div');
+          c.innerHTML='<div class="row"><div style="flex:2"><label>Text</label><textarea id="in"></textarea></div><div style="flex:1"><label>Key</label><input id="key" placeholder="LEMON"></div></div><div class="row"><button class="btn" id="enc">Encode</button><button class="btn" id="dec">Decode</button></div><div><label>Ergebnis</label><textarea id="out" readonly></textarea></div>';
+          c.querySelector('#enc').onclick=()=>c.querySelector('#out').value = vigEnc(c.querySelector('#in').value, c.querySelector('#key').value);
+          c.querySelector('#dec').onclick=()=>c.querySelector('#out').value = vigDec(c.querySelector('#in').value, c.querySelector('#key').value);
+          return c;
+      }},
+      { id:'coords', icon:'geo', tag:'Geo', title:'Koordinaten', desc:'Distanz · Peilung · Projektion', render(){
+          const c=document.createElement('div');
+          c.innerHTML='<div class="row"><div><label>Lat1</label><input id="lat1" placeholder="48.400"></div><div><label>Lon1</label><input id="lon1" placeholder="10.000"></div><div><label>Lat2</label><input id="lat2" placeholder="48.500"></div><div><label>Lon2</label><input id="lon2" placeholder="9.990"></div></div><div class="row"><button class="btn" id="calc">Berechnen</button><span class="chip" id="dist">Distanz: –</span><span class="chip" id="bear">Peilung: –</span></div><div class="sep"></div><div class="row"><div><label>Start Lat</label><input id="plat" placeholder="48.400000"></div><div><label>Start Lon</label><input id="plon" placeholder="10.000000"></div><div><label>Peilung (°)</label><input id="pbrg" placeholder="0..360"></div><div><label>Distanz (m)</label><input id="pdis" placeholder="250"></div></div><div class="row"><button class="btn" id="proj">Projizieren</button><span class="chip" id="pt">Ziel: –</span></div>';
+          const R=6371e3,toRad=d=>d*Math.PI/180,toDeg=r=>r*180/Math.PI;
+          const hav=(a,b,c,d)=>{const φ1=toRad(a),φ2=toRad(c),Δφ=toRad(c-a),Δλ=toRad(d-b);const t=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;return 2*R*Math.atan2(Math.sqrt(t),Math.sqrt(1-t))};
+          const bear=(a,b,c,d)=>{const φ1=toRad(a),φ2=toRad(c),Δλ=toRad(d-b);const y=Math.sin(Δλ)*Math.cos(φ2);const x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);return (toDeg(Math.atan2(y,x))+360)%360};
+          const proj=(lat,lon,bearing,dist)=>{const δ=dist/R,θ=toRad(bearing),φ1=toRad(lat),λ1=toRad(lon);const φ2=Math.asin(Math.sin(φ1)*Math.cos(δ)+Math.cos(φ1)*Math.sin(δ)*Math.cos(θ));const λ2=λ1+Math.atan2(Math.sin(θ)*Math.sin(δ)*Math.cos(φ1),Math.cos(δ)-Math.sin(φ1)*Math.sin(φ2));return {lat:toDeg(φ2),lon:((toDeg(λ2)+540)%360)-180}};
+          c.querySelector('#calc').onclick=()=>{const a=Number(c.querySelector('#lat1').value),b=Number(c.querySelector('#lon1').value),d=Number(c.querySelector('#lat2').value),e=Number(c.querySelector('#lon2').value); if([a,b,d,e].some(Number.isNaN)) return alert('Zahlen prüfen'); const dist=Math.round(hav(a,b,d,e)); const br=bear(a,b,d,e).toFixed(2); c.querySelector('#dist').textContent=`Distanz: ${dist} m`; c.querySelector('#bear').textContent=`Peilung: ${br}°`;};
+          c.querySelector('#proj').onclick=()=>{const lat=Number(c.querySelector('#plat').value),lon=Number(c.querySelector('#plon').value),br=Number(c.querySelector('#pbrg').value),dis=Number(c.querySelector('#pdis').value); if([lat,lon,br,dis].some(Number.isNaN)) return alert('Zahlen prüfen'); const r=proj(lat,lon,br,dis); c.querySelector('#pt').textContent=`Ziel: ${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}`;};
+          return c;
+      }},
+      { id:'hash', icon:'hash', tag:'Hash', title:'SHA‑256', desc:'Kryptografischer Hash', render(){
+          const c=document.createElement('div');
+          c.innerHTML='<label>Text</label><textarea id="t"></textarea><div class="sep"></div><label>SHA‑256</label><input id="h" readonly />';
+          const b=document.createElement('button'); b.className='btn'; b.textContent='Berechnen';
+          b.onclick=async()=>{ const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c.querySelector('#t').value)); c.querySelector('#h').value=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join(""); };
+          c.appendChild(document.createElement('div')).append(b); return c;
+      }},
     ];
 
-    const container = document.getElementById('modules');
-    const search = document.getElementById('search');
-
-    function render(filter="") {
-      container.innerHTML = "";
-      modules.filter(m => m.title.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(m => {
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = m.icon + `<h2>${m.title}</h2><p>${m.desc}</p>`;
-          card.onclick = () => location.href = m.link;
-          container.appendChild(card);
-        });
+    // --- Tiles rendering ---
+    const grid = document.getElementById('grid');
+    function renderTiles(list){
+      grid.innerHTML='';
+      list.forEach(m=>{
+        const card=document.createElement('div'); card.className='card';
+        const icon=document.createElement('div'); icon.className='icon'; icon.innerHTML=ICONS[m.icon]||'🧩';
+        const h=document.createElement('h3'); h.textContent=m.title;
+        const p=document.createElement('p'); p.textContent=m.desc||'';
+        const tag=document.createElement('div'); tag.className='tag'; tag.textContent=m.tag||'Modul';
+        card.append(tag,icon,h,p);
+        card.onclick=()=>openMod(m);
+        grid.appendChild(card);
+      });
     }
-    render();
 
-    search.addEventListener('input', e => render(e.target.value));
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./pwa/sw.js').catch(console.warn);
+    // --- Modal handling ---
+    const panel=document.getElementById('panel');
+    const body=document.getElementById('modBody');
+    const title=document.getElementById('modTitle');
+    const modIcon=document.getElementById('modIcon');
+    function openMod(m){
+      body.innerHTML='';
+      modIcon.innerHTML = ICONS[m.icon] || '🧩';
+      title.textContent = m.title;
+      body.appendChild(m.render());
+      panel.classList.add('open');
     }
+    document.getElementById('close').onclick=()=>panel.classList.remove('open');
+    panel.addEventListener('click',e=>{ if(e.target===panel) panel.classList.remove('open') });
+
+    // --- Search ---
+    const q=document.getElementById('q');
+    q.addEventListener('input',()=>{
+      const term=q.value.toLowerCase().trim();
+      renderTiles(term? modules.filter(m=>(m.title+m.desc+m.tag).toLowerCase().includes(term)) : modules);
+    });
+
+    // Init
+    renderTiles(modules);
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('./pwa/sw.js').catch(()=>{}); }
   </script>
 </body>
 </html>
