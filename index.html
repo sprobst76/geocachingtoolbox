@@ -8,11 +8,11 @@
   <link rel="manifest" href="./pwa/manifest.webmanifest">
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #e2e8f0;
-      --accent: #38bdf8;
-      --accent-hover: #0ea5e9;
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --text: #e6edf3;
+      --accent: #3fb950;
+      --accent-hover: #2ea043;
     }
     body {
       margin: 0;
@@ -25,82 +25,95 @@
     }
     header {
       padding: 1rem;
-      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      background: var(--card-bg);
       text-align: center;
-      color: #04131e;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    h1 {
+    header h1 {
       margin: 0;
-      font-size: 1.6rem;
-      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    #search {
+      margin-top: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0.4rem;
+      border: none;
+      width: 90%;
+      max-width: 400px;
     }
     main {
       flex: 1;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
       padding: 1rem;
     }
     .card {
       background: var(--card-bg);
-      border-radius: 1rem;
-      padding: 1.2rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      border-radius: 0.8rem;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 200px;
+      justify-content: space-between;
     }
     .card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    .card svg {
+      width: 40px;
+      height: 40px;
+      fill: var(--accent);
     }
     .card h2 {
-      font-size: 1.2rem;
-      margin: 0 0 0.5rem;
+      margin: 0.5rem 0 0;
+      font-size: 1.1rem;
     }
     .card p {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      flex: 1;
-    }
-    .card .tag {
-      background: var(--accent);
-      color: #04131e;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      align-self: flex-start;
+      font-size: 0.85rem;
+      color: #8b949e;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>GCC Web – Geocache Calculator (PWA)</h1>
+    <h1>GCC Web – Geocache Calculator</h1>
+    <input type="text" id="search" placeholder="🔍 Modul suchen...">
   </header>
-  <main id="modules">
-    <!-- Dynamische Kacheln -->
-  </main>
+  <main id="modules"></main>
+
   <script>
     const modules = [
-      { title: 'Atbash Cipher', desc: 'Text mit Atbash-Chiffre umwandeln', tag: 'Cipher', link: '#atbash' },
-      { title: 'Caesar Cipher', desc: 'Text mit Caesar-Chiffre verschieben', tag: 'Cipher', link: '#caesar' },
-      { title: 'Vigenère Cipher', desc: 'Text mit Schlüsselwort verschlüsseln', tag: 'Cipher', link: '#vigenere' },
-      { title: 'Koordinaten-Umrechner', desc: 'UTM, WGS84, MGRS konvertieren', tag: 'Geo', link: '#coords' },
+      { title: 'Atbash Cipher', desc: 'Text mit Atbash-Chiffre umwandeln', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3h20v2H2zm0 14h20v2H2zm0-7h20v2H2z"/></svg>', link: '#atbash' },
+      { title: 'Caesar Cipher', desc: 'Text mit Caesar-Chiffre verschieben', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>', link: '#caesar' },
+      { title: 'Vigenère Cipher', desc: 'Text mit Schlüsselwort verschlüsseln', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>', link: '#vigenere' },
+      { title: 'Koordinaten-Umrechner', desc: 'UTM, WGS84, MGRS konvertieren', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>', link: '#coords' },
     ];
+
     const container = document.getElementById('modules');
-    modules.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<span class="tag">${m.tag}</span><h2>${m.title}</h2><p>${m.desc}</p>`;
-      card.onclick = () => location.href = m.link;
-      container.appendChild(card);
-    });
-  </script>
-  <script>
+    const search = document.getElementById('search');
+
+    function render(filter="") {
+      container.innerHTML = "";
+      modules.filter(m => m.title.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(m => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = m.icon + `<h2>${m.title}</h2><p>${m.desc}</p>`;
+          card.onclick = () => location.href = m.link;
+          container.appendChild(card);
+        });
+    }
+    render();
+
+    search.addEventListener('input', e => render(e.target.value));
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./pwa/sw.js').catch(console.warn);
     }
