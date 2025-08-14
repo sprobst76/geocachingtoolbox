@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>GCC Web – Geocache Calculator</title>
+  <link rel="manifest" href="./pwa/manifest.webmanifest">
+  <link rel="stylesheet" href="./src/core/style.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>GCC Web – Geocache Calculator <span class="pill">PWA</span></h1>
+      <p class="small">Modularer Client – funktioniert offline.</p>
+      <div class="tabs" id="tabs"></div>
+    </div>
+  </header>
+  <main class="wrap" id="app"></main>
+
+  <script type="module" src="./src/core/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./pwa/sw.js').catch(console.warn);
+    }
+  </script>
+</body>
+</html>
